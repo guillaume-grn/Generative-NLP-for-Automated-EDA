@@ -4,7 +4,7 @@ import pandas as pd
 import re
 from utils import *
 from llm_chains import *
-from pythonREPL import *
+from llm_agents import *
 
 st.set_page_config(
     page_title="EDA",

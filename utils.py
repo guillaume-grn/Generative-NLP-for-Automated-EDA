@@ -5,7 +5,7 @@ import pandas as pd
 import re
 from utils import *
 from llm_chains import *
-from pythonREPL import *
+from llm_agents import *
 
 def extract_table_schema(db_name,table_name):
   # Connexion à la base de données SQLite
@@ -190,3 +190,37 @@ def extract_database_schema(db_name):
     connexion.close()
 
     return table_schemas
+
+def debug_and_display_general_agent(agent_response,db_name):
+  python_agent=PythonAgent2(db_name)
+
+  sections = agent_response.split('```')
+
+  # Display sections
+  for i in range(len(sections)):
+                        
+      if re.search(r'\bpython\b', sections[i], re.IGNORECASE) and re.search(r'\(', sections[i], re.IGNORECASE):
+          replaced_section = re.sub(r'\bpython\b', '', sections[i], flags=re.IGNORECASE)
+          
+          # Execute section code to create visualization
+          try:
+              exec(replaced_section, globals(), locals())
+              st.code(replaced_section)
+              st.pyplot(plt.gcf())
+              plt.figure()
+              
+          except Exception as e:
+              try:
+                  st.write("After fix:")
+                  
+                  replaced_section2=python_agent.debug_code(replaced_section)
+                            
+                  st.code(replaced_section2)
+                  exec(replaced_section2, globals(), locals())
+                  st.pyplot(plt.gcf())
+                  plt.figure()
+              except Exception as e:
+                  print("échec pour la visualisation ",i)
+                  st.error(f"An error occurred: {e}")            
+      else :
+          st.write(sections[i])

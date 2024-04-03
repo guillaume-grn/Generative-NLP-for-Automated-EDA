@@ -4,7 +4,7 @@ import pandas as pd
 import re
 from utils import *
 from llm_chains import *
-from pythonREPL import *
+from llm_agents import *
 
 st.set_page_config(
     page_title="EDA",
@@ -25,6 +25,7 @@ if 'uploaded_file' in st.session_state :
         py_sections = st.session_state['py_sections_multi'] 
         debug_and_display_multi(py_sections,db_name)
 
+    
     if launch_button:
         #clear the page
         st.session_state['py_sections_multi'] = None
@@ -44,7 +45,21 @@ if 'uploaded_file' in st.session_state :
             st.session_state['py_sections_multi'] = py_sections
 
             debug_and_display_multi(py_sections,db_name)
+
+    user_question = st.text_input("If you have a question, enter it below:")
+    
+    # Bouton "Submit" pour soumettre la question
+    if st.button("Submit your question"):
+        # Si une question a été saisie, ...
+        if user_question:
+ 
+            # ... on crée un agent Python pour traiter la question
+            general_agent = GeneralAgent(db_name)
             
+            # On exécute le code de l'agent Python
+            agent_response = general_agent.answer_user(user_question)
+
+            debug_and_display_general_agent(agent_response,db_name)   
     
 else : 
     st.write("Move first to the Home page to download your database")
