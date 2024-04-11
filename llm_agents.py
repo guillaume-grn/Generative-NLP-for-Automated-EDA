@@ -1,4 +1,6 @@
-from env import OPEN_AI_KEY
+from dotenv import load_dotenv
+load_dotenv()  # take environment variables from .env.
+import os
 
 from langchain import hub
 from langchain.agents import AgentExecutor
@@ -43,7 +45,7 @@ class PythonAgent():
         """
         
         prompt = base_prompt.partial(instructions=self.instructions)
-        agent = create_openai_functions_agent(ChatOpenAI(temperature=0, openai_api_key=OPEN_AI_KEY), tools, prompt)
+        agent = create_openai_functions_agent(ChatOpenAI(temperature=0, openai_api_key=os.environ.get('OPEN_AI_KEY')), tools, prompt)
         self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
     def debug_code(self, code):
         cvb=self.agent_executor.invoke({"input": code})["output"]
@@ -224,7 +226,7 @@ class GeneralAgent():
         [
             (
                 "system",
-                f"You are a datascientist working on the database {db_name}. If you were asked to generate a visualization, do it and then output the code you used to do it.",
+                f"You are a datascientist working on the database {db_name} and you are also an expert of Python. If you were asked to generate a visualization, do it and then output the block of code you used to do it."
             ),
             ("user", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
@@ -237,7 +239,7 @@ class GeneralAgent():
         func=python_repl.run,
         )
         tools = [repl_tool,extract_joins,extract_table_attributes,load_tables_names,extract_table_schema,extract_database_schema]
-        llm = ChatOpenAI(model="gpt-4",api_key=OPEN_AI_KEY)
+        llm = ChatOpenAI(model="gpt-4",api_key=os.environ.get('OPEN_AI_KEY'))
         llm_with_tools = llm.bind_tools(tools)
         agent = (
             {
@@ -270,7 +272,7 @@ class PythonAgent2():
         """
         
         prompt = base_prompt.partial(instructions=self.instructions)
-        agent = create_openai_functions_agent(ChatOpenAI(temperature=0, openai_api_key=OPEN_AI_KEY), tools, prompt)
+        agent = create_openai_functions_agent(ChatOpenAI(temperature=0, openai_api_key=os.environ.get('OPEN_AI_KEY')), tools, prompt)
         self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
     def debug_code(self, code):
         cvb=self.agent_executor.invoke({"input": code})["output"]

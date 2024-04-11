@@ -10,6 +10,9 @@ st.write("# 📊 SQL Data Analysis powered by LLM ")
 uploaded_file = st.file_uploader("Download the SQL file", type=[".sqlite", ".db"])
 if uploaded_file is not None :
     st.session_state['uploaded_file'] = uploaded_file
+    #write the file at the root of the app
+    with open(uploaded_file.name, "wb") as f:
+        f.write(uploaded_file.getbuffer())
 
 if 'uploaded_file' in st.session_state :
     db_name=st.session_state['uploaded_file'].name

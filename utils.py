@@ -115,25 +115,29 @@ def debug_and_display_multi(py_code_sections,db_name):
                   
       if re.search(r'\bpython\b', sections[i], re.IGNORECASE) and re.search(r'\(', sections[i], re.IGNORECASE):
           replaced_section = re.sub(r'\bpython\b', '', sections[i], flags=re.IGNORECASE)
-          
+        
           # Execute section code to create visualization
           try:
-              exec(replaced_section, globals(), locals())
-              st.code(replaced_section)
+              exec(remove_show(replaced_section), globals(), locals())
               st.pyplot(plt.gcf())
               plt.figure()
+              plt.close()
+              with st.expander("Show code"):
+                st.code(replaced_section)
+              
               
           except Exception as e:
               try:
                   st.write("After fix:")
                   
                   replaced_section2=python_agent.debug_code(replaced_section)
-                            
-                  st.code(replaced_section2)
-                  exec(replaced_section2, globals(), locals())
+                  exec(remove_show(replaced_section2), globals(), locals())
                   st.pyplot(plt.gcf())
                   plt.figure()
+                  with st.expander("Show code"):
+                    st.code(replaced_section2)
               except Exception as e:
+                  plt.figure()
                   print("échec pour la visualisation ",i)
                   st.error(f"An error occurred: {e}")            
       else :
@@ -153,18 +157,24 @@ def debug_and_display_single(py_code_sections,db_name,table_name):
           # Execute section code to create visualization
           try:
               exec(replaced_section, globals(), locals())
-              st.code(replaced_section)
               st.pyplot(plt.gcf())
               plt.figure()
+              with st.expander("Show code"):
+                st.code(replaced_section)
+              
           except Exception as e:
               try:
                   st.write("After fix:")
                   replaced_section=python_agent.debug_code(replaced_section)
-                  st.code(replaced_section)
-                  exec(replaced_section, globals(), locals())
                   
+                  exec(replaced_section, globals(), locals())
                   st.pyplot(plt.gcf())
+                  plt.figure()
+                  with st.expander("Show code"):
+                    st.code(replaced_section)
+                  
               except Exception as e:
+                  plt.figure()
                   print("échec pour la visualisation ",i)
                   st.error(f"An error occurred: {e}")            
       else :
@@ -204,10 +214,13 @@ def debug_and_display_general_agent(agent_response,db_name):
           
           # Execute section code to create visualization
           try:
-              exec(replaced_section, globals(), locals())
-              st.code(replaced_section)
+             
+              exec(remove_show(replaced_section), globals(), locals())
               st.pyplot(plt.gcf())
               plt.figure()
+              with st.expander("Show code"):
+                st.code(replaced_section)
+              
               
           except Exception as e:
               try:
@@ -215,11 +228,14 @@ def debug_and_display_general_agent(agent_response,db_name):
                   
                   replaced_section2=python_agent.debug_code(replaced_section)
                             
-                  st.code(replaced_section2)
-                  exec(replaced_section2, globals(), locals())
+                  
+                  exec(remove_show(replaced_section2), globals(), locals())
                   st.pyplot(plt.gcf())
                   plt.figure()
+                  with st.expander("Show code"):
+                      st.code(replaced_section2)
               except Exception as e:
+                  plt.figure()
                   print("échec pour la visualisation ",i)
                   st.error(f"An error occurred: {e}")            
       else :

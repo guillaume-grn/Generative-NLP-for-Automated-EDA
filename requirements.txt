@@ -1,0 +1,9 @@
+python-dotenv
+boto3
+langchain-core
+langchain-openai
+langchain-mistralai
+langchain-community
+streamlit
+matplotlib
+pandas

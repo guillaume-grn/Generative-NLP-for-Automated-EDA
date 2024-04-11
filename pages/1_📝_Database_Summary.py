@@ -2,7 +2,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
 import re
-from utils import *
+import utils as ut
 from llm_chains import *
 from llm_agents import *
 
