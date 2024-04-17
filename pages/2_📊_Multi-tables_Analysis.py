@@ -52,14 +52,14 @@ if 'uploaded_file' in st.session_state :
             # py_sections = visualizer.execute_prompt_code('gpt', db_name, sql_queries)
         py_sections = ""
         for i,query_with_header in enumerate(queries_with_header,start=1): 
-            with st.spinner(f"Generating code for visualisation {i}..."):           
+            with st.spinner(f"Generating code for visualisation {i}/{len(queries_with_header)}..."):           
                 py_sections += visualizer.execute_prompt_code('gpt', db_name, query_with_header.strip())
         st.session_state['py_sections_multi'] = py_sections
 
         ut.debug_and_display_multi(py_sections,db_name)
 
     user_question = st.text_input("If you have a question, enter it below:")
-    
+  
     # Bouton "Submit" pour soumettre la question
     if st.button("Submit your question"):
         # Si une question a été saisie, ...

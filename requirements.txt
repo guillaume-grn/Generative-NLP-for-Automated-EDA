@@ -1,5 +1,8 @@
 python-dotenv
 boto3
+langchain
+langchainhub
+langchain-experimental
 langchain-core
 langchain-openai
 langchain-mistralai
@@ -7,3 +10,4 @@ langchain-community
 streamlit
 matplotlib
 pandas
+seaborn

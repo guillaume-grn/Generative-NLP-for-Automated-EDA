@@ -5,7 +5,6 @@ import os
 from langchain import hub
 from langchain.agents import AgentExecutor
 from langchain_experimental.tools import PythonREPLTool
-tools = [PythonREPLTool()]
 from langchain.agents import create_openai_functions_agent
 from langchain_openai import ChatOpenAI
 import sqlite3
@@ -35,21 +34,6 @@ def format_agent_output(output):
             replaced_section = re.sub(r'\bpython\b', '', section, flags=re.IGNORECASE)
             return remove_show(replaced_section)
         
-class PythonAgent():
-    def __init__(self, db_name):
-        self.instructions = f"""You are an agent designed to fix python code.
-        You have access to a python REPL, which you must use to execute python code.
-        EXECUTE your code proposal to ensure it works properly.
-        If conn is not defined, use conn = sqlite3.connect({db_name})
-        Output the code you used to generate the visualization.
-        """
-        
-        prompt = base_prompt.partial(instructions=self.instructions)
-        agent = create_openai_functions_agent(ChatOpenAI(temperature=0, openai_api_key=os.environ.get('OPEN_AI_KEY')), tools, prompt)
-        self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
-    def debug_code(self, code):
-        cvb=self.agent_executor.invoke({"input": code})["output"]
-        return format_agent_output(cvb)
         
 @tool
 def extract_database_schema(db_name: str) -> list:
@@ -218,7 +202,7 @@ def extract_joins(db_name: str) -> list:
     conn.close()
     return possible_joins
 
-
+python_repl = PythonREPL()
     
 class GeneralAgent():
     def __init__(self, db_name):
@@ -261,23 +245,118 @@ class GeneralAgent():
         return cvb
         #return format_agent_output(cvb)
 
-
-class PythonAgent2():
+class PythonAgent():
+    # def __init__(self, db_name):
+    #     self.instructions = f"""You are an agent designed to fix python code.
+    #     You have access to a python REPL, which you must use to execute python code.
+    #     EXECUTE your code proposal to ensure it works properly.
+    #     If conn is not defined, use conn = sqlite3.connect({db_name})
+    #     Output the code you used to generate the visualization.
+    #     """
+        
+    #     prompt = base_prompt.partial(instructions=self.instructions)
+    #     agent = create_openai_functions_agent(ChatOpenAI(temperature=0, openai_api_key=os.environ.get('OPEN_AI_KEY')), [python_repl], prompt)
+    #     self.agent_executor = AgentExecutor(agent=agent, tools=[python_repl], verbose=True, handle_parsing_errors=True)
+    # def debug_code(self, code):
+    #     cvb=self.agent_executor.invoke({"input": code})["output"]
+    #     return format_agent_output(cvb)
+    
     def __init__(self, db_name):
-        self.instructions = f"""You are an agent designed to fix python code, or to write python code using a sql query provided.
+        self.prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                f"""You are an agent designed to fix python code, or to write python code using a sql query provided.
         You have access to a python REPL, which you must use to execute python code.
         EXECUTE your code proposal to ensure it works properly.
         If conn is not defined, use conn = sqlite3.connect({db_name})
         Output the code you used to generate the visualization.
         """
-        
-        prompt = base_prompt.partial(instructions=self.instructions)
-        agent = create_openai_functions_agent(ChatOpenAI(temperature=0, openai_api_key=os.environ.get('OPEN_AI_KEY')), tools, prompt)
+            ),
+            ("user", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ]
+        )
+        python_repl = PythonREPL()
+        repl_tool = Tool(
+        name="python_repl",
+        description="A Python shell. Use this to execute python commands. Can be useful to plot visualisations. It has access to several libraries such as matplotlib. Input should be a valid python command. ",
+        func=python_repl.run,
+        )
+        tools = [repl_tool,extract_joins,extract_table_attributes,load_tables_names,extract_table_schema,extract_database_schema]
+        llm = ChatOpenAI(model="gpt-4",api_key=os.environ.get('OPEN_AI_KEY'))
+        llm_with_tools = llm.bind_tools(tools)
+        agent = (
+            {
+                "input": lambda x: x["input"],
+                "agent_scratchpad": lambda x: format_to_openai_tool_messages(
+                    x["intermediate_steps"]
+                ),
+            }
+            | self.prompt
+            | llm_with_tools
+            | OpenAIToolsAgentOutputParser()
+        )
+
         self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
     def debug_code(self, code):
         cvb=self.agent_executor.invoke({"input": code})["output"]
         return format_agent_output(cvb)
 
+    
+class PythonAgent2():
+    # def __init__(self, db_name):
+    #     self.instructions = f"""You are an agent designed to fix python code, or to write python code using a sql query provided.
+    #     You have access to a python REPL, which you must use to execute python code.
+    #     EXECUTE your code proposal to ensure it works properly.
+    #     If conn is not defined, use conn = sqlite3.connect({db_name})
+    #     Output the code you used to generate the visualization.
+    #     """
+        
+    #     prompt = base_prompt.partial(instructions=self.instructions)
+    #     agent = create_openai_functions_agent(ChatOpenAI(temperature=0, openai_api_key=os.environ.get('OPEN_AI_KEY')), [python_repl], prompt)
+    #     self.agent_executor = AgentExecutor(agent=agent, tools=[python_repl], verbose=True, handle_parsing_errors=True)
+    def __init__(self, db_name):
+        self.prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                f"""You are an agent designed to fix python code, or to write python code using a sql query provided.
+                You have access to a python REPL, which you must use to execute python code.
+                EXECUTE your code proposal to ensure it works properly.
+                If conn is not defined, use conn = sqlite3.connect({db_name})
+                Output the code you used to generate the visualization.
+                """
+            ),
+            ("user", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ]
+        )
+        python_repl = PythonREPL()
+        repl_tool = Tool(
+        name="python_repl",
+        description="A Python shell. Use this to execute python commands. Can be useful to plot visualisations. It has access to several libraries such as matplotlib. Input should be a valid python command. ",
+        func=python_repl.run,
+        )
+        tools = [repl_tool,extract_joins,extract_table_attributes,load_tables_names,extract_table_schema,extract_database_schema]
+        llm = ChatOpenAI(model="gpt-4",api_key=os.environ.get('OPEN_AI_KEY'))
+        llm_with_tools = llm.bind_tools(tools)
+        agent = (
+            {
+                "input": lambda x: x["input"],
+                "agent_scratchpad": lambda x: format_to_openai_tool_messages(
+                    x["intermediate_steps"]
+                ),
+            }
+            | self.prompt
+            | llm_with_tools
+            | OpenAIToolsAgentOutputParser()
+        )
+
+        self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
+    def debug_code(self, code):
+        cvb=self.agent_executor.invoke({"input": code})["output"]
+        return format_agent_output(cvb)
 
 
 

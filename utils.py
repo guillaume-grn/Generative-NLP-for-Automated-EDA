@@ -134,10 +134,12 @@ def debug_and_display_multi(py_code_sections,db_name):
                   exec(remove_show(replaced_section2), globals(), locals())
                   st.pyplot(plt.gcf())
                   plt.figure()
+                  plt.close()
                   with st.expander("Show code"):
                     st.code(replaced_section2)
               except Exception as e:
                   plt.figure()
+                  plt.close()
                   print("échec pour la visualisation ",i)
                   st.error(f"An error occurred: {e}")            
       else :
